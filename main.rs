@@ -327,7 +327,7 @@ mod goofspiel {
         let mut computer = Player::new_computer();
         // init player and display {pool and hand}
         let mut player = Player::new();
-        print!("{}[2J", 27 as char);
+        
 
         // for card in prize pool reversed:
         //     pop and display prize pool card
