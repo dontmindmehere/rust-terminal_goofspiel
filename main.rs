@@ -364,7 +364,6 @@ mod goofspiel {
             if prizes.len() < 1 {
                 break;
             }
-            print!("{}[2J", 27 as char);
         }
 
         let computer_total = computer.accumulate();
