@@ -250,7 +250,7 @@ mod goofspiel {
 
     fn new_prize_pool() -> Vec<Card> {
         let mut rng = thread_rng();
-        let mut pool: Vec<Card> = (Card::ACE..=Card::KING).map(|x| Card::Clubs(x)).collect();
+        let mut pool: Vec<Card> = (Card::ACE..=Card::KING).map(|x| Card::Diamonds(x)).collect();
         pool.shuffle(&mut rng);
         pool
     }
@@ -263,7 +263,7 @@ mod goofspiel {
     impl Player {
         pub fn new() -> Player {
             Player {
-                hand: (Card::ACE..=Card::KING).map(|x| Card::Clubs(x)).collect(),
+                hand: (Card::ACE..=Card::KING).map(|x| Card::Hearts(x)).collect(),
                 pool: Vec::new()
             }
         }
@@ -289,9 +289,9 @@ mod goofspiel {
                 let choice = input::int("Bid a card by number or enter 0 to pass: ");
                 if choice == 0 {
                     return choice;
-                } else if self.is_valid_choice(choice) {
+                } else if self.is_valid_choice(choice - 1) {
                     (*self).hand[choice - 1].to_none();
-                    return choice;
+                    return choice - 1;
                 }
             }
         }
@@ -321,19 +321,9 @@ mod goofspiel {
 
     pub fn game() {
         let mut discarded: Vec<Card> = Vec::new();
-        // init prize pool
         let mut prizes = new_prize_pool();
-        // init new computer
         let mut computer = Player::new_computer();
-        // init player and display {pool and hand}
         let mut player = Player::new();
-        
-
-        // for card in prize pool reversed:
-        //     pop and display prize pool card
-        //     ask and compare inputs
-        //     display both inputs
-        //     award cards (or not)
         let mut show_pool = false;
 
         loop {
@@ -349,18 +339,26 @@ mod goofspiel {
 
             let player_choice = player.get_choice();
             let computer_choice = computer.get_computer_choice();
+            println!("--------------------------------------------");
+            println!("{:<12}: {}", "computer bid", computer_choice);
+            println!("{:<12}: {}", "you bid", player_choice);
 
-            println!("computer bid: {}", computer_choice);
-            println!("you bid: {}", player_choice);
             match player_choice.cmp(&computer_choice) {
                 Ordering::Greater => {
                     player.pool.push(prize);
-                    println!("Your won the prize");
+                    println!("You won the prize!\n");
                     show_pool = true;
                 },
-                Ordering::Less => computer.pool.push(prize),
-                Ordering::Equal => discarded.push(prize)
+                Ordering::Less => {
+                    computer.pool.push(prize);
+                    println!("Computer won the prize!\n");
+                },
+                Ordering::Equal => {
+                    discarded.push(prize);
+                    println!("Draw! The prize was discarded\n");
+                }
             }
+            println!("----------------");
             if prizes.len() < 1 {
                 break;
             }
@@ -371,28 +369,25 @@ mod goofspiel {
 
         println!("Computer total: {}", computer_total);
         println!("Your total: {}", player_total);
+        println!("          ");
         match player_total.cmp(&computer_total) {
-            Ordering::Greater => println!("You win!!"),
-            Ordering::Less => println!("You lose."),
-            Ordering::Equal => println!("Draw!"),
+            Ordering::Greater => println!("{:^10}", "You win!!"),
+            Ordering::Less => println!("{:^10}", "You lose."),
+            Ordering::Equal => println!("{:^10}", "Draw!"),
         }
+        println!("          ");
 
-        println!("Computer's pool: ");
+        println!("{:<17}", "Computer's pool: ");
         show_cards(&computer.pool);
-        println!("Your pool: ");
+        println!("{:<17}", "Your pool: ");
         show_cards(&player.pool);
-        println!("Discarded cards: ");
+        println!("{:<17}", "Discarded cards: ");
         show_cards(&discarded);
-        // display both hands and pools
-        // compare points
-        // display win/lose message
     }
 }
 
 
 
 fn main() {
-    loop {
-        goofspiel::game();
-    }
+    goofspiel::game();
 }
