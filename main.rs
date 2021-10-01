@@ -1,10 +1,10 @@
-use rand::{thread_rng, seq::{SliceRandom, IteratorRandom}};
+use rand::{thread_rng, seq::SliceRandom};
 use std::cmp::Ordering;
 
 mod input {
     use std::io;
 
-    pub fn int(msg: &str) -> usize {
+    pub fn uint(msg: &str) -> usize {
         loop {
             println!("{}", msg);
             let mut input = String::new();
@@ -18,6 +18,21 @@ mod input {
                     continue;
                 }
             };
+        }
+    }
+}
+
+pub enum Suit {
+    None, Clubs, Hearts, Spades, Diamonds
+}
+impl Suit {
+    fn make(&self, rank: u8) -> Card {
+        match self {
+            Suit::None => Card::None,
+            Suit::Clubs => Card::Clubs(rank),
+            Suit::Hearts => Card::Hearts(rank),
+            Suit::Spades => Card::Spades(rank),
+            Suit::Diamonds => Card::Diamonds(rank),
         }
     }
 }
@@ -97,11 +112,13 @@ impl Card {
         }
     }
 
-    pub fn new_prize_pool() -> Vec<Card> {
-        let mut rng = thread_rng();
-        let mut pool: Vec<Card> = (Card::ACE..=Card::KING).map(|x| Card::Diamonds(x)).collect();
-        pool.shuffle(&mut rng);
-        pool
+    pub fn new_set(suit: Suit, random: bool) -> Vec<Card> {
+        let mut set: Vec<_> = (Card::ACE..=Card::KING).map(|rank| suit.make(rank)).collect();
+        if random {
+            let mut rng = thread_rng();
+            set.shuffle(&mut rng);
+        }
+        set
     }
 }
 
@@ -110,15 +127,9 @@ struct Player {
     pool: Vec<Card>
 }
 impl Player {
-    pub fn new() -> Player {
+    pub fn new(suit: Suit, random: bool) -> Player {
         Player {
-            hand: (Card::ACE..=Card::KING).map(|x| Card::Hearts(x)).collect(),
-            pool: Vec::new()
-        }
-    }
-    pub fn new_computer() -> Player {
-        Player {
-            hand: (Card::ACE..=Card::KING).map(|x| Card::Spades(x)).collect(),
+            hand: Card::new_set(suit, random),
             pool: Vec::new()
         }
     }
@@ -132,7 +143,7 @@ impl Player {
 
     pub fn get_choice(&mut self) -> usize {
         loop {
-            let choice = input::int("Bid a card by number (1-13): ");
+            let choice = input::uint("Bid a card by number (1-13): ");
             if choice != 0 && self.is_valid_choice(choice - 1) {
                 (*self).hand[choice - 1].to_none();
                 return choice;
@@ -140,31 +151,19 @@ impl Player {
         }
     }
 
-    pub fn get_rand(&mut self) -> usize {
-        let mut rng = thread_rng();
-        let choices = self.hand
-                        .iter_mut()
-                        .enumerate()
-                        .filter(|(_, card)| !matches!{ card, Card::None });
-        let (index, card) = choices.choose(&mut rng).expect("Computer somehow ran out of cards.");
-        card.to_none();
-        index + 1
-    }
-
-    fn accumulate(&self) -> u8 {
-        let mut total: u8 = 0;
-        for card in &self.pool {
-            total += card.num().unwrap_or(0);
-        }
-        total
+    fn pool_sum(&self) -> u8 {
+        self.pool
+            .iter()
+            .map(|card| card.num().unwrap_or(0))
+            .sum()
     }
 }
 
 fn main() {
-    let mut discarded: Vec<Card> = Vec::new();
-    let mut prizes = Card::new_prize_pool();
-    let mut computer = Player::new_computer();
-    let mut player = Player::new();
+    let mut discarded = Vec::<Card>::new();
+    let mut prizes = Card::new_set(Suit::Diamonds, true);
+    let mut computer = Player::new(Suit::Spades, true);
+    let mut player = Player::new(Suit::Hearts, false);
     let mut show_pool = false;
 
     for prize in prizes.drain(..) {
@@ -178,7 +177,7 @@ fn main() {
         }
 
         let player_choice = player.get_choice();
-        let computer_choice = computer.get_rand();
+        let computer_choice = computer.hand.pop().unwrap().num().unwrap() as usize;
         println!("--------------------------------------------");
         println!("computer bid : {}", computer_choice);
         println!("you bid      : {}", player_choice);
@@ -200,27 +199,26 @@ fn main() {
         }
         println!("--------------------------------------------");
     }
+
     println!("\n############################################");
 
-    let computer_total = computer.accumulate();
-    let player_total = player.accumulate();
+    let computer_total = computer.pool_sum();
+    let player_total = player.pool_sum();
 
     println!("computer total : {}", computer_total);
-    println!("your total     : {}", player_total);
-    println!("          ");
+    println!("your total     : {}\n", player_total);
+
     match player_total.cmp(&computer_total) {
-        Ordering::Greater => println!("{:^10}", "You win!!"),
-        Ordering::Less => println!("{:^10}", "You lose."),
-        Ordering::Equal => println!("{:^10}", "Draw!"),
+        Ordering::Greater => println!("You win!!"),
+        Ordering::Less => println!("You lose."),
+        Ordering::Equal => println!("Draw!"),
     }
     println!("############################################\n");
 
-    [&computer.pool, &player.pool]
-        .iter()
-        .zip(["computer's pool", "your pool"])
-        .for_each(|(pool, name)| {
-            println!("{}", name); Card::show_vec_cards(pool);
-        });
+    println!("computer's pool");
+    Card::show_vec_cards(&computer.pool);
+    println!("your pool");
+    Card::show_vec_cards(&player.pool);
 
     if discarded.len() > 0 {
         println!("Discarded cards: ");
