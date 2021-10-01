@@ -1,6 +1,5 @@
 use rand::{thread_rng, seq::{SliceRandom, IteratorRandom}};
 use std::cmp::Ordering;
-use std::fmt::Write;
 
 mod input {
     use std::io;
