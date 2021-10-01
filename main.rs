@@ -22,7 +22,7 @@ mod input {
     }
 }
 
-pub enum Suit {
+enum Suit {
     None, Clubs, Hearts, Spades, Diamonds
 }
 impl Suit {
@@ -38,7 +38,7 @@ impl Suit {
 }
 
 #[derive(Copy, Clone)]
-pub enum Card {
+enum Card {
     None,
     Clubs(u8),
     Hearts(u8),
@@ -46,10 +46,10 @@ pub enum Card {
     Diamonds(u8)
 }
 impl Card {
-    pub const ACE: u8 = 1;
-    pub const KING: u8 = 13;
+    const ACE: u8 = 1;
+    const KING: u8 = 13;
 
-    fn suit_sym(&self) -> char {
+    fn _suit_sym(&self) -> char {
         match self {
             Card::None => ' ',
             Card::Clubs(_) => '♣',
@@ -59,7 +59,7 @@ impl Card {
         }
     }
 
-    fn rank_sym(&self) -> String {
+    fn _rank_sym(&self) -> String {
         format!("{}", match self.num() {
             Some(1) => "A".to_string(),
             Some(11) => "J".to_string(),
@@ -70,21 +70,21 @@ impl Card {
         })
     }
 
-    fn draw(&self) -> [String; 5] {
+    fn _draw(&self) -> [String; 5] {
         [
             String::from("┌─────┐"),
-            format!("│{:<2}   │", self.rank_sym()),
-            format!("│{0:<2} {0:>2}│", self.suit_sym()),
-            format!("│   {:>2}│", self.rank_sym()),
+            format!("│{:<2}   │", self._rank_sym()),
+            format!("│{0:<2} {0:>2}│", self._suit_sym()),
+            format!("│   {:>2}│", self._rank_sym()),
             String::from("└─────┘")
         ]
     }
 
-    pub fn to_none(&mut self) {
+    fn to_none(&mut self) {
         *self = Card::None
     }
 
-    pub fn num(&self) -> Option<u8> {
+    fn num(&self) -> Option<u8> {
         match self {
             Card::Clubs(num)
             | Card::Hearts(num)
@@ -94,10 +94,10 @@ impl Card {
         }
     }
 
-    pub fn show_vec_cards(cards: &Vec<Card>) {
+    fn show_vec_cards(cards: &Vec<Card>) {
         let mut output: [String; 5] = Default::default();
         for card in cards {
-            for (line_card, line_out) in (*card).draw().iter().zip(&mut output) {
+            for (line_card, line_out) in (*card)._draw().iter().zip(&mut output) {
                 (*line_out).push_str(&line_card);
             }
         }
@@ -106,13 +106,13 @@ impl Card {
         }
     }
 
-    pub fn show(&self) {
-        for line in self.draw() {
+    fn show(&self) {
+        for line in self._draw() {
             println!("{}", line);
         }
     }
 
-    pub fn new_set(suit: Suit, random: bool) -> Vec<Card> {
+    fn new_set(suit: Suit, random: bool) -> Vec<Card> {
         let mut set: Vec<_> = (Card::ACE..=Card::KING).map(|rank| suit.make(rank)).collect();
         if random {
             let mut rng = thread_rng();
@@ -127,7 +127,7 @@ struct Player {
     pool: Vec<Card>
 }
 impl Player {
-    pub fn new(suit: Suit, random: bool) -> Player {
+    fn new(suit: Suit, random: bool) -> Player {
         Player {
             hand: Card::new_set(suit, random),
             pool: Vec::new()
@@ -141,7 +141,7 @@ impl Player {
         false
     }
 
-    pub fn get_choice(&mut self) -> usize {
+    fn get_choice(&mut self) -> usize {
         loop {
             let choice = input::uint("Bid a card by number (1-13): ");
             if choice != 0 && self.is_valid_choice(choice - 1) {
